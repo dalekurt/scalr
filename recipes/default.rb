@@ -98,6 +98,19 @@ log "Navigate to 'http://#{server_fqdn}' to complete scalr installation" do
   action :nothing
 end
 
+template "#{node['scalr']['dir']}/etc/config.ini" do
+  source "config.ini.erb"
+  owner "root"
+  group "root"
+  mode "0644"
+  variables(
+    :database        => node['scalr']['db']['database'],
+    :user            => node['scalr']['db']['user'],
+    :password        => node['scalr']['db']['password'],
+  )
+  notifies :write, "log[Navigate to 'http://#{server_fqdn}' to complete scalr installation]"
+end
+
 apache_site "000-default" do
   enable false
 end
