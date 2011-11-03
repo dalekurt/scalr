@@ -35,34 +35,76 @@ include_recipe "php::module_mysql"
 end
 
 # Fetch remote file and extract it to the directory path /var/www/scalr
-tarball = node[:scalr][:tarball]
 
-remote_file "/tmp/#{tarball}" do
-  source "#{node[:scalr][:tarball_url]}"
+remote_file "#{Chef::Config[:file_cache_path]}/scalr-#{node['scalr']['version']}.tar.gz" do
+  checksum node['scalr']['checksum']
+  source "http://scalr.googlecode.com/files/scalr-#{node['scalr']['version']}.tar.gz"
   mode "0644"
-  checksum "#{node[:scalr][:tarball_checksum]}"
 end
 
-execute "tar" do
-  user "#{node[:scalr][:user]}"
-  group "#{node[:scalr][:group]}"
+directory "#{node['scalr']['dir']}" do
+  owner node['scalr']['user']
+  group node['scalr']['group']
+  mode "0755"
+  action :create
+  recursive true
+end
+
+execute "untar-scalr" do
+  cwd node['scalr']['dir']
+  command "tar --strip-components 1 -xzf #{Chef::Config[:file_cache_path]}/scalr-#{node['scalr']['version']}.tar.gz"
+end
+
+execute "mysql-install-scalr-privileges" do
+  command "/usr/bin/mysql -u root -p#{node['mysql']['server_root_password']} < #{node['mysql']['conf_dir']}/scalr-grants.sql"
+  action :nothing
+end
+
+template "#{node['mysql']['conf_dir']}/scalr-grants.sql" do
+  source "grants.sql.erb"
+  owner "root"
+  group "root"
+  mode "0600"
+  variables(
+    :user     => node['scalr']['db']['user'],
+    :password => node['scalr']['db']['password'],
+    :database => node['scalr']['db']['database']
+  )
+  notifies :run, "execute[mysql-install-scalr-privileges]", :immediately
+end
+
+execute "create #{node['scalr']['db']['database']} database" do
+  command "/usr/bin/mysqladmin -u root -p#{node['mysql']['server_root_password']} create #{node['scalr']['db']['database']}"
+  not_if do
+    require 'mysql'
+    m = Mysql.new("localhost", "root", node['mysql']['server_root_password'])
+    m.list_dbs.include?(node['scalr']['db']['database'])
+  end
+  notifies :create, "ruby_block[save node data]", :immediately
+  command "/usr/bin/mysql -u root -p#{node['mysql']['server_root_password']} < #{node['scalr']['dir']}/sql/scalr-2.2-structure.sql"
+  command "/usr/bin/mysql -u root -p#{node['mysql']['server_root_password']} < #{node['scalr']['dir']}/sql/scalr-2.2-data.sql"
   
-  installation_path = "#{node[:scalr][:installation_path]}"
-  cwd installation_path
-  command "tar zxf /tmp/#{tarball}"
-  creates installation_path + "/" + node[:scalr][:dirname]
-  action :run
 end
 
-# Define web path
-web_path = "#{node[:scalr][:web_path]}"
+# save node data after writing the MYSQL root password, so that a failed chef-client run that gets this far doesn't cause an unknown password to get applied to the box without being saved in the node data.
+ruby_block "save node data" do
+  block do
+    node.save
+  end
+  action :create
+end
 
-# Copy the contents of the app/ directory to /var/www/scalr
-remote_directory web_path + "/" + node[:scalr][:dirname] do
-    source node[:scalr][:installation_path] + "/" + node[:scalr][:dirname]
-    files_backup 0
-    path web_path + "/" + node[:scalr][:dirname]
-    user "#{node[:scalr][:user]}"
-    group "#{node[:scalr][:group]}"
-    mode "0644"
+log "Navigate to 'http://#{server_fqdn}' to complete scalr installation" do
+  action :nothing
+end
+
+apache_site "000-default" do
+  enable false
+end
+
+web_app "scalr" do
+  template "scalr.conf.erb"
+  docroot "#{node['scalr']['dir']}"
+  server_name server_fqdn
+  server_aliases node['fqdn']
 end
