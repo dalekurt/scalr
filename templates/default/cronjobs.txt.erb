@@ -1,0 +1,15 @@
+*/4  * * * * php -q <%= node['scalr']['dir'] %>/cron/cron.php --UsageStatsPoller
+*/2  * * * * php -q <%= node['scalr']['dir'] %>/cron/cron.php --Scheduler
+*/15 * * * * php -q <%= node['scalr']['dir'] %>/cron/cron.php --MySQLMaintenance
+*    * * * * php -q <%= node['scalr']['dir'] %>/cron/cron.php --DNSManagerPoll
+*/4  * * * * php -q <%= node['scalr']['dir'] %>/cron/cron.php --RolesQueue
+17   5 * * * php -q <%= node['scalr']['dir'] %>/cron/cron.php --RotateLogs
+*/5  * * * * php -q <%= node['scalr']['dir'] %>/cron/cron.php --DBQueueEvent
+*/4  * * * * php -q <%= node['scalr']['dir'] %>/cron/cron.php --RDSMaintenance
+*/2  * * * * php -q <%= node['scalr']['dir'] %>/cron/cron.php --BundleTasksManager
+*/2  * * * * php -q <%= node['scalr']['dir'] %>/cron/cron.php --MessagingQueue
+*/2  * * * * php -q <%= node['scalr']['dir'] %>/cron/cron.php --EBSManager
+
+* * * * * php -q <%= node['scalr']['dir'] %>/cron-ng/cron.php --ScalarizrMessaging
+* * * * * php -q <%= node['scalr']['dir'] %>/cron-ng/cron.php --Poller
+* * * * * php -q <%= node['scalr']['dir'] %>/cron-ng/cron.php --Scaling

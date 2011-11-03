@@ -62,8 +62,8 @@ end
 
 template "#{node['mysql']['conf_dir']}/scalr-grants.sql" do
   source "grants.sql.erb"
-  owner "root"
-  group "root"
+  owner node['scalr']['user']
+  group node['scalr']['group']
   mode "0600"
   variables(
     :user     => node['scalr']['db']['user'],
@@ -100,13 +100,13 @@ end
 
 template "#{node['scalr']['dir']}/etc/config.ini" do
   source "config.ini.erb"
-  owner "root"
-  group "root"
+  owner node['scalr']['user']
+  group node['scalr']['group']
   mode "0644"
   variables(
     :database        => node['scalr']['db']['database'],
     :user            => node['scalr']['db']['user'],
-    :password        => node['scalr']['db']['password'],
+    :password        => node['scalr']['db']['password']
   )
   notifies :write, "log[Navigate to 'http://#{server_fqdn}' to complete scalr installation]"
 end
@@ -120,4 +120,16 @@ web_app "scalr" do
   docroot "#{node['scalr']['dir']}"
   server_name server_fqdn
   server_aliases node['fqdn']
+end
+
+template "#{node['scalr']['dir']}/cron/cronjob.txt" do
+  source "cronjob.txt.erb"
+  owner node['scalr']['user']
+  group node['scalr']['group']
+  mode "0644"
+end
+
+execute "create cronjobs "do
+  command "cat #{node['scalr']['dir']}/cron/crontjob.txt >> /etc/crontab"
+  action :run
 end
