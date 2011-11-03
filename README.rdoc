@@ -1,4 +1,11 @@
 = DESCRIPTION:
+Install Scalr 
+
+= WHAT IS SCALR?:
+With Scalr, your website and web application can grow to millions of users with little work. Scalr will provision new servers on-the-fly to handle spikes in demand, and decommission them when no longer needed to lower cost. It will scale your database, application servers, and load balancers so you never have to.
+
+Website http://www.scalr.net
+Google Code Project http://scalr.googlecode.com
 
 = REQUIREMENTS:
 
