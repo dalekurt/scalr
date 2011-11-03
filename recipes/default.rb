@@ -28,7 +28,7 @@ include_recipe "php"
 include_recipe "php::module_curl"
 include_recipe "php::module_mysql"
 
-%w{chkconfig libssh2 net-snmp }.each do |pkg|
+%w{chkconfig libssh2 net-snmp openssl }.each do |pkg|
   package pkg do
     action :install
   end
